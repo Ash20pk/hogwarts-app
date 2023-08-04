@@ -3,6 +3,8 @@ import Web3 from "web3";
 import HogwartsNFT from "./HogwartsNFT.json"; // import default export
 import HogwartsLogo from "./hogwarts_logo.png"; // import the image
 import "./App.css";
+import thinkingSound from "./thinking.mp3"; // Replace "thinking.mp3" with your sound file
+
 
 const web3 = new Web3(window.ethereum);
 
@@ -15,10 +17,12 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false); // initialize loading state to true
 
+  const thinkingAudio = new Audio(thinkingSound);
 
   useEffect(() => {
     if (window.ethereum) {
-      setConnected(true); // set the initial connection status to true
+      // set the initial connection status to true or false
+      setConnected(true);
       window.ethereum.on("accountsChanged", (accounts) => {
         // update the connection status when the user changes accounts
         setAccount(accounts[0]);
@@ -28,6 +32,7 @@ function App() {
         // update the connection status when the user disconnects
         setAccount("");
         setConnected(false);
+        setMinted(false); // Reset the minted state when the user disconnects
       });
       window.ethereum.enable().then((accounts) => {
         setAccount(accounts[0]);
@@ -37,20 +42,30 @@ function App() {
           contractAddress
         );
         setContract(contractInstance);
+        checkMinted(); // Check for a minted NFT when the app first loads
+        getHouse();
+        getHouseSlogan();
       });
     } else {
       alert("Please install MetaMask to use this app!");
     }
   }, []);
-  
 
   useEffect(() => {
-    if (contract && account) {
+    if (contract || account) {
       getHouse();
       getHouseSlogan();
       checkMinted();
     }
   }, [contract, account]);
+
+  useEffect(() => {
+    // Update the UI when the minted state changes
+    if (minted) {
+      getHouse();
+      getHouseSlogan();
+    }
+  }, [minted]);
 
   const disconnectMetamask = async () => {
     try {
@@ -73,17 +88,25 @@ function App() {
     }
   };
 
-  // function to request an NFT from the contract
   const requestNFT = () => {
     contract.methods
       .requestNFT()
       .send({ from: account, value: web3.utils.toWei("0", "ether") }) //if you add mint fees to the contract change this number accordingly
+      .on("transactionHash", function(hash) {
+        console.log("Transaction sent. Transaction hash:", hash);
+        setLoading(true); // Set loading to true before sending the transaction
+
+        // Play the thinking sound once the transaction is sent (user pays for the transaction)
+        thinkingAudio.play();
+      })
       .on("receipt", function(receipt) {
         console.log("Transaction successful:", receipt.transactionHash);
         setMinted(true);
+        setLoading(false); // Set loading back to false after the transaction is confirmed
       })
       .on("error", (error) => {
         console.error("Error requesting NFT:", error);
+        setLoading(false); // Set loading back to false if there's an error during the transaction
       });
   };
   
@@ -107,9 +130,11 @@ function App() {
   // function to check if the user has minted an NFT
   const checkMinted = async () => {
     const minted = await contract.methods.balanceOf(account).call();
-    if (minted >= 1){
+    if (minted > 0){
       setMinted(true);
     }
+    else
+    setMinted(false);
   };
   
   return (
@@ -123,7 +148,7 @@ function App() {
             <>
               {loading ? (
                 // display a loading message while the data is being loaded
-                <p>hmmmm...let me think</p>
+                <p>Ah, right then... hmm... right</p>
               ) : (
                 // display the house and slogan when the data is loaded
                 <>

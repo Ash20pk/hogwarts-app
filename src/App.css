@@ -59,7 +59,7 @@ p {
 }
 
 .Hogwarts-logo {
-  width: 150px; /* adjust to your preferred size */
+  width: 10%; /* adjust to your preferred size */
   height: auto; /* maintains aspect ratio */
   display: block; /* centers the image horizontally */
   margin: 0 auto; /* centers the image horizontally */
