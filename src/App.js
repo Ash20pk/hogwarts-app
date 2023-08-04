@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Web3 from "web3";
-import HogwartsNFT from "./HogwartsNFT.json"; // import default export
-import HogwartsLogo from "./hogwarts_logo.png"; // import the image
+import HogwartsNFT from "./HogwartsNFT.json";
+import HogwartsLogo from "./hogwarts_logo.png";
 import "./App.css";
 import thinkingSound from "./thinking.mp3"; // Replace "thinking.mp3" with your sound file
-
 
 const web3 = new Web3(window.ethereum);
 
@@ -15,24 +14,47 @@ function App() {
   const [house_slogan, sethouseSlogan] = useState("");
   const [minted, setMinted] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [loading, setLoading] = useState(false); // initialize loading state to true
+  const [loading, setLoading] = useState(false);
 
   const thinkingAudio = new Audio(thinkingSound);
 
+  const getHouse = useCallback(async () => {
+    setLoading(true);
+    const addressToHouse = ["You might belong in Gryffindor....", "You might belong in Hufflepuff....", "You might belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
+    const houseIndex = await contract.methods.s_addressToHouse(account).call();
+    setHouse(addressToHouse[houseIndex]);
+    setLoading(false);  
+  }, [contract, account]);
+
+  const getHouseSlogan = useCallback(async () => {
+    setLoading(true);
+    const sloganToHouse = [    "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "If you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      const houseSloganIndex = await contract.methods.s_addressToHouse(account).call();
+    sethouseSlogan(sloganToHouse[houseSloganIndex]);
+    setLoading(false);
+  }, [contract, account]);
+
+  const checkMinted = useCallback(async () => {
+    const minted = await contract.methods.balanceOf(account).call();
+    if (minted > 0){
+      setMinted(true);
+      getHouse();
+      getHouseSlogan();
+    }
+    else
+    setMinted(false);
+  }, [contract, account, getHouse, getHouseSlogan]);
+
   useEffect(() => {
     if (window.ethereum) {
-      // set the initial connection status to true or false
       setConnected(true);
       window.ethereum.on("accountsChanged", (accounts) => {
-        // update the connection status when the user changes accounts
         setAccount(accounts[0]);
         setConnected(true);
       });
       window.ethereum.on("disconnect", () => {
-        // update the connection status when the user disconnects
         setAccount("");
         setConnected(false);
-        setMinted(false); // Reset the minted state when the user disconnects
+        setMinted(false);
       });
       window.ethereum.enable().then((accounts) => {
         setAccount(accounts[0]);
@@ -42,9 +64,7 @@ function App() {
           contractAddress
         );
         setContract(contractInstance);
-        checkMinted(); // Check for a minted NFT when the app first loads
-        getHouse();
-        getHouseSlogan();
+        checkMinted();
       });
     } else {
       alert("Please install MetaMask to use this app!");
@@ -53,19 +73,16 @@ function App() {
 
   useEffect(() => {
     if (contract || account) {
-      getHouse();
-      getHouseSlogan();
       checkMinted();
     }
-  }, [contract, account]);
+  }, [contract, account, checkMinted]);
 
   useEffect(() => {
-    // Update the UI when the minted state changes
     if (minted) {
       getHouse();
       getHouseSlogan();
     }
-  }, [minted]);
+  }, [minted, getHouse, getHouseSlogan]);
 
   const disconnectMetamask = async () => {
     try {
@@ -108,33 +125,6 @@ function App() {
         console.error("Error requesting NFT:", error);
         setLoading(false); // Set loading back to false if there's an error during the transaction
       });
-  };
-  
-  //function to get the house of the contract
-  const getHouse = async () => {
-    setLoading(true);
-    const addressToHouse = ["You might belong in Gryffindor....", "You might belong in Hufflepuff....", "You might belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
-    const houseIndex = await contract.methods.s_addressToHouse(account).call();
-    setHouse(addressToHouse[houseIndex]);
-    setLoading(false);
-  };
-
-    //function to get the house of the contract
-    const getHouseSlogan = async () => {
-      setLoading(true);
-      const sloganToHouse = [    "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "If you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      const houseSloganIndex = await contract.methods.s_addressToHouse(account).call();
-      sethouseSlogan(sloganToHouse[houseSloganIndex]);
-      setLoading(false);
-    };
-  
-  // function to check if the user has minted an NFT
-  const checkMinted = async () => {
-    const minted = await contract.methods.balanceOf(account).call();
-    if (minted > 0){
-      setMinted(true);
-    }
-    else
-    setMinted(false);
   };
   
   return (
