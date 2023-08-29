@@ -3,7 +3,11 @@ import Web3 from "web3";
 import HogwartsNFT from "./HogwartsNFT.json";
 import HogwartsLogo from "./hogwarts_logo.png";
 import "./App.css";
-import thinkingSound from "./thinking.mp3"; // Replace "thinking.mp3" with your sound file
+import thinkingSound from "./thinking.mp3";
+import gryffindorSound from "./gryffindor.mp3"; 
+import slytherinSound from "./slytherin.mp3";
+import ravenclawSound from "./ravenclaw.mp3";
+import hufflepuffSound from "./hufflepuff.mp3";
 
 const web3 = new Web3(window.ethereum);
 
@@ -15,8 +19,23 @@ function App() {
   const [minted, setMinted] = useState(false);
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); 
 
+//Audio Files
   const thinkingAudio = new Audio(thinkingSound);
+  const gryffindorAudio = new Audio(gryffindorSound); 
+  const slytherinAudio = new Audio(slytherinSound); 
+  const ravenclawAudio = new Audio(ravenclawSound); 
+  const hufflepuffAudio = new Audio(hufflepuffSound);
+
+  const houseAudioMap = {
+    0: thinkingAudio,
+    1: gryffindorAudio,
+    2: hufflepuffAudio,
+    3: ravenclawAudio,
+    4: slytherinAudio,
+  };
+  
 
   const getHouse = useCallback(async () => {
     setLoading(true);
@@ -28,7 +47,8 @@ function App() {
 
   const getHouseSlogan = useCallback(async () => {
     setLoading(true);
-    const sloganToHouse = [    "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "If you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      const houseSloganIndex = await contract.methods.s_addressToHouse(account).call();
+    const sloganToHouse = ["Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "If you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
+    const houseSloganIndex = await contract.methods.s_addressToHouse(account).call();
     sethouseSlogan(sloganToHouse[houseSloganIndex]);
     setLoading(false);
   }, [contract, account]);
@@ -84,6 +104,13 @@ function App() {
     }
   }, [minted, getHouse, getHouseSlogan]);
 
+  // Update the useEffect to monitor changes in house and slogan data
+  useEffect(() => {
+    if (house !== "" && house_slogan !== "") {
+      setDataLoaded(true);
+    }
+  }, [house, house_slogan]);
+
   const disconnectMetamask = async () => {
     try {
       await window.ethereum.enable();
@@ -119,7 +146,17 @@ function App() {
       .on("receipt", function(receipt) {
         console.log("Transaction successful:", receipt.transactionHash);
         setMinted(true);
-        setLoading(false); // Set loading back to false after the transaction is confirmed
+        getHouse();
+        getHouseSlogan();
+       
+        // Play the house-specific audio after the transaction is confirmed
+        if (house !== "" && houseAudioMap.hasOwnProperty(house)) {
+          houseAudioMap[house].play();
+        }
+
+        if(dataLoaded){
+          setLoading(false); // Set loading back to false after the transaction is confirmed
+        }
       })
       .on("error", (error) => {
         console.error("Error requesting NFT:", error);
@@ -127,42 +164,46 @@ function App() {
       });
   };
   
-  return (
-    <div className="App">
-      <img className="Hogwarts-logo" src={HogwartsLogo} alt="Hogwarts Logo" />
-      <h1>Welcome to Hogwarts</h1>
-  
-      {connected ? (
-        <>
-          {minted ? (
-            <>
-              {loading ? (
-                // display a loading message while the data is being loaded
-                <p>Ah, right then... hmm... right</p>
-              ) : (
-                // display the house and slogan when the data is loaded
-                <>
-                  <p>{house}</p>
-                  {house_slogan.split('. ').map((slogan, index) => (
-                    <p key={index}>{slogan}</p>
-                  ))}
-                </>
-              )}
-            </>
-          ) : (
-            <button onClick={requestNFT}>Let's choose your house</button>
-          )}
-          <button className="metamask-button" onClick={disconnectMetamask}>
-            disconnect wallet
-          </button>
-        </>
-      ) : (
-        <button className="metamask-button" onClick={connectMetamask}>
-          connect wallet
+ return (
+  <div className="App">
+    <img className="Hogwarts-logo" src={HogwartsLogo} alt="Hogwarts Logo" />
+    <h1>Welcome to Hogwarts</h1>
+
+    {connected ? (
+      <>
+        {minted ? (
+          <>
+            {loading ? (
+              // Display a loading message while the data is being loaded
+              <p>Ah, right then... hmm... right</p>
+            ) : dataLoaded ? (
+              // Display the house and slogan when the data is loaded
+              <>
+                <p>{house}</p>
+                {house_slogan.split('. ').map((slogan, index) => (
+                  <p key={index}>{slogan}</p>
+                ))}
+              </>
+            ) : (
+              // Fallback case when loading is complete but data hasn't loaded yet
+              <p>Hmm seems difficult</p>
+            )}
+          </>
+        ) : (
+          <button disabled={loading || minted} // Disable the button while loading or if already minted
+          onClick={requestNFT}>Let's choose your house </button>
+        )}
+        <button className="metamask-button" onClick={disconnectMetamask}>
+          Disconnect Wallet
         </button>
-      )}
-    </div>
-  );
+      </>
+    ) : (
+      <button className="metamask-button" onClick={connectMetamask}>
+        Connect Wallet
+      </button>
+    )}
+  </div>
+);
 }
-    
-    export default App;   
+
+export default App;
