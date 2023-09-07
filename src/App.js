@@ -11,6 +11,7 @@ import hufflepuffSound from "./sounds/hufflepuff.mp3";
 import ravenclawSound from "./sounds/ravenclaw.mp3";
 import slytherinSound from "./sounds/slytherin.mp3";
 import thinkingSound from "./sounds/thinking.mp3"; 
+import bgsound from "./sounds/bg_music.mp3";
 
 
 const web3 = new Web3(window.ethereum);
@@ -34,9 +35,13 @@ function App() {
   const hufflepuffAudio = new Audio(hufflepuffSound);
   const ravenclawAudio = new Audio(ravenclawSound);
   const slytherinAudio = new Audio(slytherinSound);
+  const bgAudio = new Audio(bgsound);
+
+  bgAudio.volume=0.4;
+  
 
   const defaultLoadingMessage = "Ah, right then... hmm... right";
-  const dynamicLoadingMessage = `Ahh seems difficult...${counter}`;
+  const dynamicLoadingMessage = `Ahh seems difficult...let me think harder, wait for ${counter}`;
   
   useEffect(() => {
     if (window.ethereum) {
@@ -49,28 +54,9 @@ function App() {
       window.ethereum.on("disconnect", () => {
         // update the connection status when the user disconnects
         setAccount("");
+        bgAudio.pause();
         setConnected(false);
         setMinted(false); // Reset the minted state when the user disconnects
-      });
-      window.ethereum.enable().then((accounts) => {
-        setAccount(accounts[0]);
-        const hogwartsAddress = "0x798C46Fb6B1DaB71A2AbBDa2019351D8a91FE8D6";
-        const randomHouseAddress = "0x310c7670c1360a2e4FC7F139FC79A2214bCD81eE";
-
-      const hogwartsInstance = new web3.eth.Contract(
-        HogwartsNFT.abi,
-        hogwartsAddress
-      );
-      const randomHouseInstance = new web3.eth.Contract(
-        RandomHouseAssignment.abi,
-        randomHouseAddress
-      );
-
-      setHogwartsContract(hogwartsInstance);
-      setRandomHouseContract(randomHouseInstance);
-    
-      checkMinted(); // Check for a minted NFT when the app first loads
-      getHouseData(); //Refresh the house data
       });
     } else {
       alert("Please install MetaMask to use this app!");
@@ -100,6 +86,24 @@ function App() {
     try {
       await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
       setConnected(true);
+      bgAudio.play();
+      const hogwartsAddress = "0x798C46Fb6B1DaB71A2AbBDa2019351D8a91FE8D6";
+      const randomHouseAddress = "0x310c7670c1360a2e4FC7F139FC79A2214bCD81eE";
+
+    const hogwartsInstance = new web3.eth.Contract(
+      HogwartsNFT.abi,
+      hogwartsAddress
+    );
+    const randomHouseInstance = new web3.eth.Contract(
+      RandomHouseAssignment.abi,
+      randomHouseAddress
+    );
+
+    setHogwartsContract(hogwartsInstance);
+    setRandomHouseContract(randomHouseInstance);
+  
+    checkMinted(); // Check for a minted NFT when the app first loads
+    getHouseData(); //Refresh the house data
     } catch (err) {
       console.error(err);
     }
