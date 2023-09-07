@@ -11,7 +11,7 @@ import hufflepuffSound from "./sounds/hufflepuff.mp3";
 import ravenclawSound from "./sounds/ravenclaw.mp3";
 import slytherinSound from "./sounds/slytherin.mp3";
 import thinkingSound from "./sounds/thinking.mp3"; 
-import bgsound from "./sounds/bg_music.mp3";
+import bgSound from "./sounds/bg_music.mp3";
 
 
 const web3 = new Web3(window.ethereum);
@@ -28,6 +28,7 @@ function App() {
   const [checkMintedSuccess, setCheckMintSuccess] = useState(0);
   const [counter, setCounter] = useState(30);
   const [displayCounter, setDisplayCounter] = useState(false);
+  const [started, setStarted] = useState(false);
 
   //initialize audio
   const thinkingAudio = new Audio(thinkingSound);
@@ -35,13 +36,10 @@ function App() {
   const hufflepuffAudio = new Audio(hufflepuffSound);
   const ravenclawAudio = new Audio(ravenclawSound);
   const slytherinAudio = new Audio(slytherinSound);
-  const bgAudio = new Audio(bgsound);
-
-  bgAudio.volume=0.4;
-  
+  const bgAudio = new Audio(bgSound);
 
   const defaultLoadingMessage = "Ah, right then... hmm... right";
-  const dynamicLoadingMessage = `Ahh seems difficult...let me think harder, wait for ${counter}`;
+  const dynamicLoadingMessage = `Ahh seems difficult...${counter}`;
   
   useEffect(() => {
     if (window.ethereum) {
@@ -57,6 +55,25 @@ function App() {
         setConnected(false);
         setMinted(false); // Reset the minted state when the user disconnects
       });
+      window.ethereum.enable().then((accounts) => {
+        setAccount(accounts[0]);
+        const hogwartsAddress = "0xC85fbF6bFf32eb8b3b1d31ed1bc859a590C965b0";
+        const randomHouseAddress = "0x38E46CA04Cc4474e9af9C29E06C6b4A7d62e5693";
+
+      const hogwartsInstance = new web3.eth.Contract(
+        HogwartsNFT.abi,
+        hogwartsAddress
+      );
+      const randomHouseInstance = new web3.eth.Contract(
+        RandomHouseAssignment.abi,
+        randomHouseAddress
+      );
+
+      setHogwartsContract(hogwartsInstance);
+      setRandomHouseContract(randomHouseInstance);
+    
+      checkMinted(); // Check for a minted NFT when the app first loads
+      });
     } else {
       alert("Please install MetaMask to use this app!");
     }
@@ -64,7 +81,6 @@ function App() {
 
   useEffect(() => {
     if (hogwartsContract|| randomHouseContract || account) {
-      getHouseData();
       checkMinted();
     }
   }, [account]);
@@ -72,7 +88,6 @@ function App() {
   const disconnectMetamask = async () => {
     try {
       await window.ethereum.enable();
-      bgAudio.pause();
       setConnected(false);
       setAccount("");
       setHouse("");
@@ -82,28 +97,11 @@ function App() {
     }
   };
 
+  console.log(house);
   const connectMetamask = async () => {
     try {
       await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
       setConnected(true);
-      bgAudio.play();
-      const hogwartsAddress = "0x798C46Fb6B1DaB71A2AbBDa2019351D8a91FE8D6";
-      const randomHouseAddress = "0x310c7670c1360a2e4FC7F139FC79A2214bCD81eE";
-
-    const hogwartsInstance = new web3.eth.Contract(
-      HogwartsNFT.abi,
-      hogwartsAddress
-    );
-    const randomHouseInstance = new web3.eth.Contract(
-      RandomHouseAssignment.abi,
-      randomHouseAddress
-    );
-
-    setHogwartsContract(hogwartsInstance);
-    setRandomHouseContract(randomHouseInstance);
-  
-    checkMinted(); // Check for a minted NFT when the app first loads
-    getHouseData(); //Refresh the house data
     } catch (err) {
       console.error(err);
     }
@@ -133,32 +131,30 @@ function App() {
   
   //function to get the house of the contract
   const getHouseData = async () => {
-    if (minted){
-      setLoading(true);
-      const addressToHouse = ["You belong in Gryffindor....", "You belong in Hufflepuff....", "You belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
-      const houseIndex = await hogwartsContract.methods.getHouseIndex(account).call();
-      setHouse(addressToHouse[houseIndex]);
-      const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
-      sethouseSlogan(sloganToHouse[houseIndex]);
+    setLoading(true);
+    const addressToHouse = ["You belong in Gryffindor....", "You belong in Hufflepuff....", "You belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
+    const houseIndex = await hogwartsContract.methods.getHouseIndex(account).call();
+    setHouse(addressToHouse[houseIndex]);
+    const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
+    sethouseSlogan(sloganToHouse[houseIndex]);
 
-      switch (houseIndex) {
-        case '0':
-          gryffindorAudio.play();
-          break;
-        case '1':
-          hufflepuffAudio.play();
-          break;
-        case '2':
-          ravenclawAudio.play();
-          break;
-        case '3':
-          slytherinAudio.play();
-          break;
-        default:
-          break;
-      }
-      setLoading(false);
+    switch (houseIndex) {
+      case '0':
+        gryffindorAudio.play();
+        break;
+      case '1':
+        hufflepuffAudio.play();
+        break;
+      case '2':
+        ravenclawAudio.play();
+        break;
+      case '3':
+        slytherinAudio.play();
+        break;
+      default:
+        break;
     }
+    setLoading(false);
   };
 
   // function to check if the user has minted an NFT
@@ -198,12 +194,11 @@ function App() {
     <div className="App">
       <img className="Hogwarts-logo" src={HogwartsLogo} alt="Hogwarts Logo" />
       <h1>Welcome to Hogwarts</h1>
-  
-      {connected ? (
+  {started ? connected ? (
         <>
           {minted ? (
             <>
-              {loading ? (
+              {loading || !house ? (
                 // display a loading message while the data is being loaded
                 <p>{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>
               ) : (
@@ -232,7 +227,10 @@ function App() {
         <button className="metamask-button" onClick={connectMetamask}>
           connect wallet
         </button>
-      )}
+      ) :<button className="start-button" onClick={()=> {setStarted(true); bgAudio.play()}}>
+          Start Game
+        </button>
+      } 
     </div>
   );
 }  
