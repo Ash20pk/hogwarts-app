@@ -4,7 +4,13 @@ import HogwartsNFT from "./artifacts/HogwartsNFT.json";
 import RandomHouseAssignment from "./artifacts/RandomHouseAssignment.json"; 
 import HogwartsLogo from "./hogwarts_logo.png"; // import the image
 import "./App.css";
-import thinkingSound from "./sounds/thinking.mp3"; // Replace "thinking.mp3" with your sound file
+
+//import audio
+import gryffindorSound from "./sounds/gryffindor.mp3";
+import hufflepuffSound from "./sounds/hufflepuff.mp3";
+import ravenclawSound from "./sounds/ravenclaw.mp3";
+import slytherinSound from "./sounds/slytherin.mp3";
+import thinkingSound from "./sounds/thinking.mp3"; 
 
 
 const web3 = new Web3(window.ethereum);
@@ -17,19 +23,23 @@ function App() {
   const [house_slogan, sethouseSlogan] = useState("");
   const [minted, setMinted] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [loading, setLoading] = useState(false); // initialize loading state to true
+  const [loading, setLoading] = useState(false); 
   const [checkMintedSuccess, setCheckMintSuccess] = useState(0);
   const [counter, setCounter] = useState(30);
   const [displayCounter, setDisplayCounter] = useState(false);
 
-
+  //initialize audio
   const thinkingAudio = new Audio(thinkingSound);
+  const gryffindorAudio = new Audio(gryffindorSound);
+  const hufflepuffAudio = new Audio(hufflepuffSound);
+  const ravenclawAudio = new Audio(ravenclawSound);
+  const slytherinAudio = new Audio(slytherinSound);
+
   const defaultLoadingMessage = "Ah, right then... hmm... right";
   const dynamicLoadingMessage = `Ahh seems difficult...${counter}`;
   
   useEffect(() => {
     if (window.ethereum) {
-      // set the initial connection status to true or false
       setConnected(true);
       window.ethereum.on("accountsChanged", (accounts) => {
         // update the connection status when the user changes accounts
@@ -123,8 +133,25 @@ function App() {
     const addressToHouse = ["You belong in Gryffindor....", "You belong in Hufflepuff....", "You belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
     const houseIndex = await hogwartsContract.methods.getHouseIndex(account).call();
     setHouse(addressToHouse[houseIndex]);
-    const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "If you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
+    const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
     sethouseSlogan(sloganToHouse[houseIndex]);
+
+    switch (houseIndex) {
+      case '0':
+        gryffindorAudio.play();
+        break;
+      case '1':
+        hufflepuffAudio.play();
+        break;
+      case '2':
+        ravenclawAudio.play();
+        break;
+      case '3':
+        slytherinAudio.play();
+        break;
+      default:
+        break;
+    }
     setLoading(false);
   };
 
