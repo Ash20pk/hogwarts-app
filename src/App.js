@@ -19,9 +19,14 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false); // initialize loading state to true
   const [checkMintedSuccess, setCheckMintSuccess] = useState(0);
+  const [counter, setCounter] = useState(30);
+  const [displayCounter, setDisplayCounter] = useState(false);
+
 
   const thinkingAudio = new Audio(thinkingSound);
-
+  const defaultLoadingMessage = "Ah, right then... hmm... right";
+  const dynamicLoadingMessage = `Ahh seems difficult...${counter}`;
+  
   useEffect(() => {
     if (window.ethereum) {
       // set the initial connection status to true or false
@@ -39,8 +44,8 @@ function App() {
       });
       window.ethereum.enable().then((accounts) => {
         setAccount(accounts[0]);
-        const hogwartsAddress = "0x580462f5675dCDfb5f1806EfF4A19Cb668836E97";
-        const randomHouseAddress = "0xa8336934ca1934194Fdf098f19FEf6A8dd94FcBE";
+        const hogwartsAddress = "0x798C46Fb6B1DaB71A2AbBDa2019351D8a91FE8D6";
+        const randomHouseAddress = "0x310c7670c1360a2e4FC7F139FC79A2214bCD81eE";
 
       const hogwartsInstance = new web3.eth.Contract(
         HogwartsNFT.abi,
@@ -138,6 +143,7 @@ function App() {
 
   // function to check if the user has minted an NFT
   const checkNewMinted = async () => {
+      setDisplayCounter(true);  // Set this to true here
       setTimeout(async() => {
       const minted = await hogwartsContract.methods.hasMintedNFT(account).call();
       console.log(minted, checkMintedSuccess);
@@ -145,9 +151,12 @@ function App() {
         setMinted(true);
         getHouseData();
         setLoading(false);
+        setCounter(3); // Reset the counter
+        setDisplayCounter(false);  // Reset to false once confirmed
       }
       else if(checkMintedSuccess < 3){
         setCheckMintSuccess(prev=>prev+1);
+        setCounter(prev => prev - 1);  // Decrement the counter
         checkNewMinted();}
       }, 800);
     };
@@ -163,7 +172,7 @@ function App() {
             <>
               {loading ? (
                 // display a loading message while the data is being loaded
-                <p>Ah, right then... hmm... right</p>
+                <p>{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>
               ) : (
                 // display the house and slogan when the data is loaded
                 <>
@@ -178,7 +187,8 @@ function App() {
             
             <>
               {!loading && <button onClick={requestNFT} disabled={minted}>Let's choose your house</button>}
-              {loading && <p className="loading-button-msg">Ah, right then... hmm... right</p>}
+              {loading && <p className="loading-button-msg">{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>}
+
             </>
           )}
           <button className="metamask-button" onClick={disconnectMetamask}>
