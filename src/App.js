@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import useSound from 'use-sound';
 import Web3 from "web3";
 import HogwartsNFT from "./artifacts/HogwartsNFT.json"; 
 import RandomHouseAssignment from "./artifacts/RandomHouseAssignment.json"; 
@@ -12,7 +13,6 @@ import ravenclawSound from "./sounds/ravenclaw.mp3";
 import slytherinSound from "./sounds/slytherin.mp3";
 import thinkingSound from "./sounds/thinking.mp3"; 
 import bgSound from "./sounds/bg_music.mp3";
-
 
 const web3 = new Web3(window.ethereum);
 
@@ -31,17 +31,19 @@ function App() {
   const [started, setStarted] = useState(false);
 
   //initialize audio
-  const thinkingAudio = new Audio(thinkingSound);
-  const gryffindorAudio = new Audio(gryffindorSound);
-  const hufflepuffAudio = new Audio(hufflepuffSound);
-  const ravenclawAudio = new Audio(ravenclawSound);
-  const slytherinAudio = new Audio(slytherinSound);
-  const bgAudio = new Audio(bgSound);
+  const [playBgSound, { stop: stopBgSound }] = useSound(bgSound, { loop: true });
+  const [playThinkingSound] = useSound(thinkingSound, { loop: false });
+  const [playGryffindorSound] = useSound(gryffindorSound, { loop: false });
+  const [playHufflepuffSound] = useSound(hufflepuffSound, { loop: false });
+  const [playRavenclawSound] = useSound(ravenclawSound, { loop: false });
+  const [playSlytherinSound] = useSound(slytherinSound, { loop: false });
+
 
   const defaultLoadingMessage = "Ah, right then... hmm... right";
-  const dynamicLoadingMessage = `Ahh seems difficult...${counter}`;
+  const dynamicLoadingMessage = `Ahh seems difficult, let me think harder, wait for ${counter}`;
   
   useEffect(() => {
+    if (started) {
     if (window.ethereum) {
       setConnected(true);
       window.ethereum.on("accountsChanged", (accounts) => {
@@ -77,13 +79,16 @@ function App() {
     } else {
       alert("Please install MetaMask to use this app!");
     }
-  }, []);
+  }
+  }, [started]);
 
   useEffect(() => {
+    if (started) {
     if (hogwartsContract|| randomHouseContract || account) {
       checkMinted();
     }
-  }, [account]);
+  }
+  }, [account, started]);
 
   const disconnectMetamask = async () => {
     try {
@@ -92,6 +97,8 @@ function App() {
       setAccount("");
       setHouse("");
       sethouseSlogan("");
+      stopBgSound();
+      setStarted(false);
     } catch (err) {
       console.error(err);
     }
@@ -116,7 +123,7 @@ function App() {
             setLoading(true); // Set loading to true before sending the transaction
 
             // Play the thinking sound once the transaction is sent (user pays for the transaction)
-            thinkingAudio.play();
+            playThinkingSound();
         })
         .on("receipt", function (receipt) {
             console.log("Transaction successful:", receipt.transactionHash);
@@ -132,24 +139,33 @@ function App() {
   //function to get the house of the contract
   const getHouseData = async () => {
     setLoading(true);
-    const addressToHouse = ["You belong in Gryffindor....", "You belong in Hufflepuff....", "You belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
     const houseIndex = await hogwartsContract.methods.getHouseIndex(account).call();
+    const addressToHouse = [
+    "You belong in Gryffindor....", 
+    "You belong in Hufflepuff....", 
+    "You belong in wise old Ravenclaw....", 
+    "You belong perhaps in Slytherin...."];
     setHouse(addressToHouse[houseIndex]);
-    const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
+
+    const sloganToHouse = [ 
+      "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    
+      "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    
+      "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    
+      "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
     sethouseSlogan(sloganToHouse[houseIndex]);
 
     switch (houseIndex) {
       case '0':
-        gryffindorAudio.play();
+        playGryffindorSound();
         break;
       case '1':
-        hufflepuffAudio.play();
+        playHufflepuffSound();
         break;
       case '2':
-        ravenclawAudio.play();
+        playRavenclawSound();
         break;
       case '3':
-        slytherinAudio.play();
+        playSlytherinSound();
         break;
       default:
         break;
@@ -227,8 +243,8 @@ function App() {
         <button className="metamask-button" onClick={connectMetamask}>
           connect wallet
         </button>
-      ) :<button className="start-button" onClick={()=> {setStarted(true); bgAudio.play()}}>
-          Start Game
+      ) :<button className="start-button" onClick={()=> {setStarted(true); playBgSound()}}>
+          Let's go to Great Hall
         </button>
       } 
     </div>
