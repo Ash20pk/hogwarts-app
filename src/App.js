@@ -54,7 +54,6 @@ function App() {
       window.ethereum.on("disconnect", () => {
         // update the connection status when the user disconnects
         setAccount("");
-        bgAudio.pause();
         setConnected(false);
         setMinted(false); // Reset the minted state when the user disconnects
       });
@@ -73,6 +72,7 @@ function App() {
   const disconnectMetamask = async () => {
     try {
       await window.ethereum.enable();
+      bgAudio.pause();
       setConnected(false);
       setAccount("");
       setHouse("");
@@ -133,30 +133,32 @@ function App() {
   
   //function to get the house of the contract
   const getHouseData = async () => {
-    setLoading(true);
-    const addressToHouse = ["You belong in Gryffindor....", "You belong in Hufflepuff....", "You belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
-    const houseIndex = await hogwartsContract.methods.getHouseIndex(account).call();
-    setHouse(addressToHouse[houseIndex]);
-    const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
-    sethouseSlogan(sloganToHouse[houseIndex]);
+    if (minted){
+      setLoading(true);
+      const addressToHouse = ["You belong in Gryffindor....", "You belong in Hufflepuff....", "You belong in wise old Ravenclaw....", "You belong perhaps in Slytherin...."];
+      const houseIndex = await hogwartsContract.methods.getHouseIndex(account).call();
+      setHouse(addressToHouse[houseIndex]);
+      const sloganToHouse = [ "Where dwell the brave at heart. Their daring, nerve, and chivalry, Set Gryffindors apart.",    "Where they are just and loyal. Those patient Hufflepuffs are true And unafraid of toil.",    "you’ve a ready mind. Where those of wit and learning, Will always find their kind.",    "You’ll make your real friends. Those cunning folks use any means, To achieve their ends."  ];      
+      sethouseSlogan(sloganToHouse[houseIndex]);
 
-    switch (houseIndex) {
-      case '0':
-        gryffindorAudio.play();
-        break;
-      case '1':
-        hufflepuffAudio.play();
-        break;
-      case '2':
-        ravenclawAudio.play();
-        break;
-      case '3':
-        slytherinAudio.play();
-        break;
-      default:
-        break;
+      switch (houseIndex) {
+        case '0':
+          gryffindorAudio.play();
+          break;
+        case '1':
+          hufflepuffAudio.play();
+          break;
+        case '2':
+          ravenclawAudio.play();
+          break;
+        case '3':
+          slytherinAudio.play();
+          break;
+        default:
+          break;
+      }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // function to check if the user has minted an NFT
