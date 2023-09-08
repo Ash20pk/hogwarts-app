@@ -3,8 +3,10 @@ import useSound from 'use-sound';
 import Web3 from "web3";
 import HogwartsNFT from "./artifacts/HogwartsNFT.json"; 
 import RandomHouseAssignment from "./artifacts/RandomHouseAssignment.json"; 
-import HogwartsLogo from "./hogwarts_logo.png"; // import the image
+import HogwartsLogo from "./assets/hogwarts_logo.png"; // import the image
 import "./App.css";
+import Lottie from "lottie-react";
+import HPLoader from "./loaders/hpLoader.json"
 
 //import audio
 import gryffindorSound from "./sounds/gryffindor.mp3";
@@ -29,6 +31,9 @@ function App() {
   const [counter, setCounter] = useState(30);
   const [displayCounter, setDisplayCounter] = useState(false);
   const [started, setStarted] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [isUserNameSubmitted, setIsUserNameSubmitted] = useState(false);
+  const [responseLoading, setResponseLoading] = useState(false);
 
   //initialize audio
   const [playBgSound, { stop: stopBgSound }] = useSound(bgSound, { loop: true });
@@ -59,8 +64,8 @@ function App() {
       });
       window.ethereum.enable().then((accounts) => {
         setAccount(accounts[0]);
-        const hogwartsAddress = "0xC85fbF6bFf32eb8b3b1d31ed1bc859a590C965b0";
-        const randomHouseAddress = "0x38E46CA04Cc4474e9af9C29E06C6b4A7d62e5693";
+        const hogwartsAddress = "0x668E74207022aE0bEcEC3f303113E4586f5D673d";
+        const randomHouseAddress = "0x78AeF6495Ca7443dEab2F3aBfAF414D221038C65";
 
       const hogwartsInstance = new web3.eth.Contract(
         HogwartsNFT.abi,
@@ -74,6 +79,7 @@ function App() {
       setHogwartsContract(hogwartsInstance);
       setRandomHouseContract(randomHouseInstance);
     
+      
       checkMinted(); // Check for a minted NFT when the app first loads
       });
     } else {
@@ -99,6 +105,8 @@ function App() {
       sethouseSlogan("");
       stopBgSound();
       setStarted(false);
+      setIsUserNameSubmitted(false);
+      setUserName("");
     } catch (err) {
       console.error(err);
     }
@@ -116,7 +124,7 @@ function App() {
 
   const requestNFT = () => {
     randomHouseContract.methods
-        .requestNFT()
+        .requestNFT(userName)
         .send({ from: account, value: web3.utils.toWei("0", "ether") })
         .on("transactionHash", function (hash) {
             console.log("Transaction sent. Transaction hash:", hash);
@@ -175,15 +183,30 @@ function App() {
 
   // function to check if the user has minted an NFT
   const checkMinted = async () => {
+    await checkName();
     const minted = await hogwartsContract.methods.hasMintedNFT(account).call();
     console.log(minted);
     if (minted === true){
       setMinted(true);
-      getHouseData();
+      await getHouseData();
       setLoading(false);
     }
-    else
+    else {
     setMinted(false);
+    setLoading(false);
+    }
+    setResponseLoading(false);
+ 
+  };
+
+  console.log(userName);
+  const checkName = async () => {
+    setLoading(true);
+    const name = await hogwartsContract.methods.s_addressToName(account).call();
+    if (name) {
+    setUserName(name);
+    setIsUserNameSubmitted(true);}
+    console.log("name set");    
   };
 
   // function to check if the user has minted an NFT
@@ -195,6 +218,7 @@ function App() {
       if (minted === true){
         setMinted(true);
         getHouseData();
+        checkName();
         setLoading(false);
         setCounter(3); // Reset the counter
         setDisplayCounter(false);  // Reset to false once confirmed
@@ -205,50 +229,76 @@ function App() {
         checkNewMinted();}
       }, 800);
     };
-  
-  return (
-    <div className="App">
-      <img className="Hogwarts-logo" src={HogwartsLogo} alt="Hogwarts Logo" />
-      <h1>Welcome to Hogwarts</h1>
-  {started ? connected ? (
-        <>
-          {minted ? (
-            <>
-              {loading || !house ? (
-                // display a loading message while the data is being loaded
-                <p>{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>
-              ) : (
-                // display the house and slogan when the data is loaded
-                <>
-                  <p>{house}</p>
-                  {house_slogan.split('. ').map((slogan, index) => (
-                    <p key={index}>{slogan}</p>
-                  ))}
-                </>
-              )}
-            </>
-          ) : (
-            
-            <>
-              {!loading && <button onClick={requestNFT} disabled={minted}>Let's choose your house</button>}
-              {loading && <p className="loading-button-msg">{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>}
+    
+    const showNameField = ()=>(
+      <div className="form">
+        <input className="input-box"
+          type="text" 
+          placeholder="Enter your name" 
+          value={userName} 
+          onChange={(e) => setUserName(e.target.value)}
+          />
+        <button className="form-button" onClick={() => {setUserName(userName); setIsUserNameSubmitted(true);}}>Submit</button>
+      </div>)
 
+    const startButton = ()=>(
+      <button className="start-button" onClick={() => {setStarted(true); playBgSound(); setResponseLoading(true);}}>
+      Let's go to the Great Hall
+      </button>)
+
+    const mintedView = ()=> (
+        <>
+          {loading || !house ? (
+            <p>{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>
+          ) : (
+            <>
+              <p>{house}</p>
+              {house_slogan.split('. ').map((slogan, index) => (
+                <p key={index}>{slogan}</p>
+              ))}
             </>
           )}
-          <button className="metamask-button" onClick={disconnectMetamask}>
-            disconnect wallet
-          </button>
         </>
-      ) : (
-        <button className="metamask-button" onClick={connectMetamask}>
-          connect wallet
-        </button>
-      ) :<button className="start-button" onClick={()=> {setStarted(true); playBgSound()}}>
-          Let's go to Great Hall
-        </button>
-      } 
-    </div>
-  );
+      
+    )
+
+    const mintNFT = () => (
+      
+        <>
+          {!userName || !isUserNameSubmitted ? showNameField() :
+          !loading ? <button onClick={requestNFT} disabled={minted}>Let's choose your house</button> : <p className="loading-button-msg">{displayCounter ? (counter ? dynamicLoadingMessage : defaultLoadingMessage) : defaultLoadingMessage}</p>
+          }
+        </>
+      
+    )
+
+    const style = {
+      height: 250,
+    };
+
+    const connectedView = ()=> (
+      <>
+         {responseLoading ? <Lottie animationData={HPLoader} style={style} loop={true} /> : minted ? mintedView() : mintNFT()}
+      <button className="metamask-button" onClick={disconnectMetamask}> disconnect wallet </button>
+      </>
+    )
+
+    const gameStarted = ()=>(
+      <>
+      {  
+        connected ? connectedView () : <button className="metamask-button" onClick={connectMetamask}> connect wallet </button>
+      }    
+      </>
+    )
+
+    return (
+      <div className="App">
+        <img className="Hogwarts-logo" src={HogwartsLogo} alt="Hogwarts Logo" />
+        <h1>Welcome to Hogwarts {userName}</h1>
+        
+        {started ? gameStarted() : startButton()}
+      </div>
+    );
 }  
     
 export default App;   

@@ -1,14 +1,14 @@
 @font-face {
   font-family: 'HPfont';
-  src: url('./HPfont.ttf') format('truetype');
+  src: url('./assets/HPfont.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Potterfont';
-  src: url('./Potter.otf') format('truetype');
+  src: url('./assets/Potter.otf') format('truetype');
 }
 
 body {
-  background-image : url(./Old_paper.jpg);
+  background-image : url(./assets/Old_paper.jpg);
 }
 
 .App {
@@ -57,6 +57,55 @@ p {
   top: 10px;
   right: 50px;
 }
+
+.user-info {
+  display: flex;
+  align-items: center;
+  background-color: #1a1a1a;  /* Dark background to match the theme */
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.user-info span {
+  top: 10px;
+  right: 50px;
+  color: #f4e9d8;  /* A parchment-like text color to contrast the dark background */
+  margin-right: 15px;
+  font-size: 18px;
+}
+
+
+.form {
+  justify-content: center;
+  align-items: baseline;
+}
+
+.input-box {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  border: none;
+  background-color: #f4e9d8;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  outline: none;
+}
+
+.input-box:focus {
+  border-bottom: 2px solid #000000;
+}
+
+.input-box::placeholder {
+  color: #7f7f7f;
+  opacity: 0.8;
+}
+
+.form-button {
+  margin-left: 5px;
+  align-self: flex-end; /* To align it with the bottom border of the input */
+  font-size: 20px;  /* match the font-size with input-box */
+  padding: 15px 20px;  /* match the padding with input-box */
+}
+
 
 .Hogwarts-logo {
   width: 10%; /* adjust to your preferred size */
