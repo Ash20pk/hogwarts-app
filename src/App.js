@@ -28,7 +28,7 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false); 
   const [checkMintedSuccess, setCheckMintSuccess] = useState(0);
-  const [counter, setCounter] = useState(30);
+  const [counter, setCounter] = useState(60);
   const [displayCounter, setDisplayCounter] = useState(false);
   const [started, setStarted] = useState(false);
   const [userName, setUserName] = useState("");
