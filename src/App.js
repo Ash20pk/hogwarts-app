@@ -48,6 +48,18 @@ function App() {
   const dynamicLoadingMessage = `Ahh seems difficult, let me think harder, wait for ${counter}`;
   
   useEffect(() => {
+    if(started && window.ethereum) {
+      checkNetwork();
+      
+      window.ethereum.on("networkChanged", checkNetwork);
+      
+      return () => {
+        window.ethereum.removeListener("networkChanged", checkNetwork);
+      }
+    }
+  }, [started]);
+
+  useEffect(() => {
     if (started) {
     if (window.ethereum) {
       setConnected(true);
@@ -111,6 +123,21 @@ function App() {
       console.error(err);
     }
   };
+
+  const checkNetwork = async () => {
+
+      const networkId = await window.ethereum.networkVersion;
+
+    if(networkId == 80001) {
+      setStarted(true);
+      playBgSound(); 
+      setResponseLoading(true);
+    }
+    else {
+      alert("Please connect to Polygon Mumbai Testnet"); 
+    }
+  }
+  
 
   console.log(house);
   const connectMetamask = async () => {
@@ -242,7 +269,7 @@ function App() {
       </div>)
 
     const startButton = ()=>(
-      <button className="start-button" onClick={() => {setStarted(true); playBgSound(); setResponseLoading(true);}}>
+      <button className="start-button" onClick={() => {checkNetwork()}}>
       Let's go to the Great Hall
       </button>)
 
